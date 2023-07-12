@@ -37,7 +37,9 @@ builder.Services.AddIdentityServer()
     .AddAspNetIdentity<IdentityUser>()
     .AddInMemoryClients(IdentityServerConfiguration.GetClients())
     .AddInMemoryApiResources(IdentityServerConfiguration.GetApis())
-    .AddInMemoryIdentityResources(IdentityServerConfiguration.GetIdentities());
+    .AddInMemoryIdentityResources(IdentityServerConfiguration.GetIdentities())
+    .AddInMemoryApiScopes(IdentityServerConfiguration.GetScopes())
+    .AddDeveloperSigningCredential();
 
 builder.Services.AddControllersWithViews();
 
