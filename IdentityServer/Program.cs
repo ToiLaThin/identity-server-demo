@@ -33,7 +33,10 @@ builder.Services.ConfigureApplicationCookie(cookieConfig =>
 });
 
 
-builder.Services.AddIdentityServer()
+builder.Services.AddIdentityServer(identityServerOption =>
+{
+    identityServerOption.UserInteraction.LoginUrl = "/Auth/Login";
+})
     .AddAspNetIdentity<IdentityUser>()
     .AddInMemoryClients(IdentityServerConfiguration.GetClients())
     .AddInMemoryApiResources(IdentityServerConfiguration.GetApis())
