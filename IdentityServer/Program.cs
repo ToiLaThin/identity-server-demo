@@ -1,44 +1,48 @@
+using IdentityServer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//config asp.net core identity for storing user infomation
+string connString = builder.Configuration.GetConnectionString("MyConnStr");
+builder.Services.AddDbContext<IdentityDbContext>(identityDbConfig =>
+{
+    identityDbConfig.UseSqlServer(connString, sqlServerConfig =>
+    {
+        sqlServerConfig.MigrationsAssembly(Assembly.GetExecutingAssembly().GetName().Name);
+    });
+});
+builder.Services.AddIdentity<IdentityUser, IdentityRole>(identityConfig =>
+{
+    identityConfig.Password.RequiredLength = 4;
+    identityConfig.Password.RequireDigit = false;
+    identityConfig.Password.RequireUppercase = false;
+    identityConfig.Password.RequireNonAlphanumeric = false;
+})
+    .AddEntityFrameworkStores<IdentityDbContext>()
+    .AddUserManager<UserManager<IdentityUser>>()
+    .AddSignInManager<SignInManager<IdentityUser>>();
+//configure cookie to store identity server session
+builder.Services.ConfigureApplicationCookie(cookieConfig =>
+{
+    cookieConfig.Cookie.Name = "Identity.Cookie";
+    cookieConfig.LoginPath = "/Auth/Login";
+});
+
+
+builder.Services.AddIdentityServer()
+    .AddAspNetIdentity<IdentityUser>()
+    .AddInMemoryClients(IdentityServerConfiguration.GetClients())
+    .AddInMemoryApiResources(IdentityServerConfiguration.GetApis())
+    .AddInMemoryIdentityResources(IdentityServerConfiguration.GetIdentities());
+
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
-
+app.UseIdentityServer();
+app.MapDefaultControllerRoute();
 app.Run();
 
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
