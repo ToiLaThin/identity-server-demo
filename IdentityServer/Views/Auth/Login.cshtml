@@ -14,3 +14,17 @@
         <button type="submit">Sign In</button>
     </div>
 </form>
+
+
+<div>
+    <h2>Or Sign In With External Identity Providers:</h2>
+    <form asp-controller="Auth" asp-action="ExternalLogin"
+        asp-route-returnUrl="@Model.ReturnUrl" method="post">
+        @foreach( var provider in Model.ExternalProviders)
+        {
+            <button name="provider" value="@provider.Name" type="submit">
+                @provider.Name
+            </button>
+        }
+    </form>
+</div>
